@@ -1,0 +1,46 @@
+package com.atguigu.crm.test;
+
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.sql.DataSource;
+
+import org.junit.Test;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import com.atguigu.crm.dao.SalesChanceMapper;
+import com.atguigu.crm.entity.SalesChance;
+
+public class CRMTest {
+
+	private ApplicationContext ctx = null;
+	private SalesChanceMapper salesChanceMapper;
+	
+	{
+		ctx = new ClassPathXmlApplicationContext("applicationContext.xml");
+		
+	}
+	
+	@Test
+	public void testDataSource() throws SQLException {
+		DataSource dataSource = ctx.getBean(DataSource.class);
+		System.out.println(dataSource.getConnection());
+	}
+
+	@Test
+	public void testSalesChanceMapper() {
+		salesChanceMapper = ctx.getBean(SalesChanceMapper.class);
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("fromIndex", 1);
+		map.put("endIndex", 5);
+		List<SalesChance> content = salesChanceMapper.getContent(map);
+		
+		for (SalesChance salesChance : content) {
+			System.out.println(salesChance);
+		}
+	}
+	
+}

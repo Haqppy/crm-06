@@ -1,0 +1,78 @@
+package com.atguigu.crm.handler;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.util.WebUtils;
+
+import com.atguigu.crm.entity.SalesChance;
+import com.atguigu.crm.entity.SalesPlan;
+import com.atguigu.crm.orm.Page;
+import com.atguigu.crm.service.SalesChanceService;
+import com.atguigu.crm.service.SalesPlanService;
+
+@RequestMapping("/plan")
+@Controller
+public class SalesPlanHandler {
+
+	@Autowired
+	private SalesPlanService salesPlanService;
+	@Autowired
+	private SalesChanceService salesChanceService; 
+	
+	@RequestMapping(value="/list",method=RequestMethod.GET)
+	public String list(@RequestParam(value="pageNo",required=false,defaultValue="1")String pageNoStr,
+			@RequestParam(value="pageSize",required=false,defaultValue="4")String pageSizeStr,
+			Map<String, Object> map,HttpServletRequest request) {
+		
+		Page<SalesChance> page = new Page<SalesChance>();
+		page.setPageNo(pageNoStr);
+		//search_LIKE_custName
+		Map<String, Object> paramsMap = WebUtils.getParametersStartingWith(request,"search_");
+		int pageSize = 4;
+		try {
+			pageSize = Integer.parseInt(pageSizeStr);
+			page.setPageSize(pageSize);
+		} catch (NumberFormatException e) {}
+		
+		List<Integer> statuses = new ArrayList<Integer>();
+		statuses.add(2);
+		statuses.add(3);
+		statuses.add(4);
+		
+		page = salesChanceService.getPage(page, paramsMap, statuses);
+		
+		String queryString = parseParamMap2QueryString(paramsMap);
+		map.put("page", page);
+		
+		return "plan/list";
+	}
+
+	private String parseParamMap2QueryString(Map<String, Object> paramsMap) {
+		StringBuilder stringBuilder = new StringBuilder();
+		
+		for (Map.Entry<String, Object> entry : paramsMap.entrySet()) {
+			String key = entry.getKey();
+			Object value = entry.getValue();
+			
+			stringBuilder.append("search_")
+					     .append(key)
+					     .append("=")
+					     .append(value)
+					     .append("&");
+		}
+		if (stringBuilder.length() > 0) {
+			stringBuilder.replace(stringBuilder.length()-1, stringBuilder.length(), "");
+		}
+		return stringBuilder.toString();
+	}
+	
+}

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.atguigu.crm.dao.CustomersMapper">
+
+	<update id="updateCustomer">
+	   update customers
+       set 
+       address=#{address,jdbcType=VARCHAR},
+       bank=#{bank,jdbcType=VARCHAR},
+       bank_account=#{bankAccount,jdbcType=VARCHAR},
+       bankroll=#{bankroll,jdbcType=VARCHAR},
+       chief=#{chief,jdbcType=VARCHAR},
+       credit=#{credit,jdbcType=VARCHAR},
+       fax=#{fax,jdbcType=VARCHAR},
+       licence_no=#{licenceNo,jdbcType=VARCHAR},
+       local_tax_no=#{localTaxNo,jdbcType=VARCHAR},
+       name=#{name,jdbcType=VARCHAR},
+       national_tax_no=#{nationalTaxNo,jdbcType=VARCHAR},
+       no=#{no,jdbcType=VARCHAR},
+       region=#{region,jdbcType=VARCHAR},
+       satify=#{satify,jdbcType=VARCHAR},
+       state=#{state,jdbcType=VARCHAR},
+       tel=#{tel,jdbcType=VARCHAR},
+       turnover=#{turnover,jdbcType=NUMERIC},
+       websit=#{websit,jdbcType=VARCHAR},
+       zip=#{zip,jdbcType=VARCHAR},
+       customer_level=#{level,jdbcType=VARCHAR},
+       manager_id = #{manager.id,jdbcType=NUMERIC}
+       where id = #{id}
+	</update>
+	
+	<resultMap type="com.atguigu.crm.entity.Customer" id="CustomerResultMap">
+		<result property="level" column="customer_level"/>
+		<association property="manager" 
+					 column="manager_id"
+					 select="com.atguigu.crm.dao.ContactsMapper.getContactById"></association>
+		<collection property="contacts" column="id" select="com.atguigu.crm.dao.ContactsMapper.getContactsByCustId"></collection>
+	</resultMap>
+	
+	<select id="getCustomerById" resultMap="CustomerResultMap">
+		select * from customers where id = #{id}
+	</select>
+	
+	<sql id="condition">
+		<where>
+			<if test="name != null">
+				AND name LIKE #{name}
+			</if>
+			
+			<if test="manager_name != null">
+				AND m.name LIKE #{manager_name}
+			</if>
+			
+    		<if test="region != null">
+				AND region=#{region}
+			</if>
+			<if test="level != null">
+				AND customer_level=#{level}
+			</if>
+			<if test="state != null">
+				AND state=#{state}
+			</if>
+		</where>
+	</sql>
+	
+	
+	<select id="getTotalElements" resultType="Long">
+		    
+		select count(id) from
+				( select c.id,c.no, c.name, c.region, m.name as "manager.name",c.customer_level as "level",c.state
+				  from customers c
+				  left outer join contacts m
+				  on c.manager_id =m.id
+				  <include refid="condition"/>
+				) 
+	</select>
+  
+	<select id="getContent" resultType="com.atguigu.crm.entity.Customer">
+		select * from
+		( select rownum rn,c.id,c.no, c.name, c.region, m.name as "manager.name",c.customer_level as "level",c.state
+		  from customers c
+		  
+		  left outer join contacts m
+		  on c.manager_id =m.id
+		  <include refid="condition"/>
+		) t 
+		where
+		  <![CDATA[
+			  t.rn >= #{fromIndex} AND t.rn < #{endIndex} 
+		  ]]>
+	       <!--  <if test="name != null">
+				AND name LIKE #{name}
+			</if>
+			
+			<if test="manager_name != null">
+				AND "manager.name" LIKE #{manager_name}
+			</if>
+			
+    		<if test="region != null">
+				AND region=#{region}
+			</if>
+			<if test="level != null">
+				AND customer_level=#{level}
+			</if>
+			<if test="state != null">
+				AND state=#{state}
+			</if> 
+	     -->
+	</select>
+	
+</mapper>

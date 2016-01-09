@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.atguigu.crm.dao.CustomerDrainMapper">
+	<!-- Long getTotalElements(Map<String, Object> map) -->
+	
+	<sql id="condition">
+		<where>
+			<if test="customerName != null">
+				AND cust.name like #{customerName}
+			</if>
+			<if test="customerManagerName != null">
+				AND m.name like #{customerManagerName}
+			</if>
+			<if test="drainDate != null">
+				AND  drain_date IS NOT NULL
+			</if>
+		</where>
+	</sql>
+	
+	<select id="getTotalElements" resultType="Long">
+		select count(*) from 
+		(select rownum rn, cd.id,cd.last_order_date,cd.status,cd.delay,
+		 cd.drain_date,cd.reason,
+		  cust.name as "customer.name", 
+		  m.name as "customer.manager.name"
+		  from customer_drains cd
+		  left outer join customers cust
+		  on cd.customer_id=cust.id
+		  left outer join contacts m
+		  on cust.manager_id=m.id
+		  <include refid="condition"/>
+		) 
+	</select>
+	
+	<select id="getContent" resultType="com.atguigu.crm.entity.CustomerDrain">
+		select * from 
+		(select rownum rn, cd.id,cd.last_order_date,cd.status,cd.delay,
+		 cd.drain_date,cd.reason,
+		  cust.name as "customer.name", 
+		  m.name as "customer.manager.name"
+		  from customer_drains cd
+		  left outer join customers cust
+		  on cd.customer_id=cust.id
+		  left outer join contacts m
+		  on cust.manager_id=m.id
+		   <include refid="condition"/>
+		)t 
+		where 
+		<![CDATA[
+			 t.rn >= #{fromIndex} AND t.rn < #{endIndex}
+		]]>
+	</select>
+	
+</mapper>
+<!-- Long getTotalElements(Map<String, Object> map);
+	
+	List<CustomerDrain> getContent(Map<String, Object> map); -->

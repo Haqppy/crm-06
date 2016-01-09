@@ -1,0 +1,121 @@
+package com.atguigu.crm.service;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.ibatis.type.JdbcType;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.atguigu.crm.dao.SalesChanceMapper;
+import com.atguigu.crm.dao.UserMapper;
+import com.atguigu.crm.entity.SalesChance;
+import com.atguigu.crm.entity.SalesPlan;
+import com.atguigu.crm.entity.User;
+import com.atguigu.crm.orm.Page;
+import com.atguigu.crm.orm.PropertyFilter;
+import com.atguigu.crm.orm.PropertyFilter.MatchType;
+import com.atguigu.crm.utils.ReflectionUtils;
+
+@Service
+public class SalesChanceService {
+
+	@Autowired
+	private SalesChanceMapper salesChanceMapper;
+	
+	@Transactional(readOnly=true)
+	public SalesChance get(Long id) {
+		
+		return salesChanceMapper.getSalesChanceById(id);
+	}
+	
+	@Transactional
+	public void updateStatus(SalesChance salesChance) {
+		salesChanceMapper.updateStatus(salesChance);
+		//salesChanceMapper.updateStatus(status, chanceId);
+	}
+	
+	@Transactional
+	public void update(SalesChance salesChance){
+		salesChanceMapper.update(salesChance);
+	}
+	
+	@Transactional
+	public void delete(Long id){
+		salesChanceMapper.delete(id);
+	}
+	
+	@Transactional
+	public void save(SalesChance salesChance) {
+		
+		//手动设置状态
+		salesChance.setStatus(1);
+		//手动设置日期
+		salesChance.setCreateDate(new Date());
+		
+		salesChanceMapper.save(salesChance);
+	}
+	
+	/**
+	 * 带查询条件的分页
+	 * @param page
+	 * @param params
+	 * @return
+	 */
+	@Transactional(readOnly=true)
+	public Page<SalesChance> getPage(Page<SalesChance> page,
+			Map<String, Object> params,List<Integer> statuses) {
+		//将params 转换为 PropertyFilter 然后将PropertyFilter 在 转换成map  
+		List<PropertyFilter> filters = PropertyFilter.getPropertyFilters(params);
+		
+		//解析filter
+		Map<String, Object> mybatisMap = parsePropertyFilters2MybatisParams(filters);
+		//增加额外的信息
+		mybatisMap.put("statuses", statuses);
+		//查询总的记录数
+		long totalElement = salesChanceMapper.getTotalElements(mybatisMap);
+		
+		//分装 分页信息
+		int fromIndex = (page.getPageNo() - 1)*page.getPageSize() + 1;
+		int endIndex = fromIndex + page.getPageSize();
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("fromIndex", fromIndex);
+		map.put("endIndex", endIndex);
+		
+		mybatisMap.putAll(map);
+		List<SalesChance> content = salesChanceMapper.getContent(mybatisMap);
+		
+		page.setContent(content);
+		page.setTotalElements((int)totalElement);
+		
+		System.out.println(page.getTotalPages());
+		
+		return page;
+	}
+	
+	private Map<String, Object> parsePropertyFilters2MybatisParams(
+			List<PropertyFilter> filters) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		
+		for (PropertyFilter filter : filters) {
+			String propertyName = filter.getPropertyName();
+			Object propertyValue = filter.getPropertyValue();
+			Class propertyType = filter.getPropertyType();
+			
+			propertyValue = ReflectionUtils.convertValue(propertyValue, propertyType);
+			
+			MatchType matchType = filter.getMatchType();
+			if (matchType == MatchType.LIKE) {
+				propertyValue = "%"+propertyValue+"%";
+			}
+			map.put(propertyName, propertyValue);
+		}
+		
+		return map;
+	}
+
+	
+}

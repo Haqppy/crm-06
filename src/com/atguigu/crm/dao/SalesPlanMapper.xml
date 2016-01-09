@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.atguigu.crm.dao.SalesPlanMapper">
+	
+	<resultMap type="com.atguigu.crm.entity.SalesPlan" id="SalesPlansResultMap">
+		<id property="id" column="id"/>
+		<result property="result" column="plan_result"/>
+		<result property="date" column="plan_date"/>
+		<result property="todo" column="todo"/>
+		<association property="chance" 
+				     column="chance_id"
+				     select="com.atguigu.crm.dao.SalesChanceMapper.getSalesChanceById"></association>
+	</resultMap>
+	
+	<select id="getSalesPlansByChanceId" parameterType="Long" resultMap="SalesPlansResultMap">
+		select * from sales_plan where chance_id = #{chanceId}
+		ORDER BY id
+	</select>
+	
+	<select id="getContent" resultType="com.atguigu.crm.entity.SalesPlan">
+		select * from sales_plan
+	</select>
+	
+	
+</mapper>

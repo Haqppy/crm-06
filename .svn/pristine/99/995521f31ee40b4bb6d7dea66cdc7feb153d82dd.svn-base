@@ -1,0 +1,137 @@
+package com.atguigu.crm.service;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.apache.catalina.authenticator.SavedRequest;
+import org.apache.ibatis.annotations.Delete;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.atguigu.crm.dao.UserMapper;
+import com.atguigu.crm.entity.User;
+import com.atguigu.crm.orm.Page;
+import com.atguigu.crm.orm.PropertyFilter;
+import com.atguigu.crm.orm.PropertyFilter.MatchType;
+import com.atguigu.crm.utils.ReflectionUtils;
+
+@Service
+public class UserService {
+
+	@Autowired
+	private UserMapper userMapper;
+	
+	@Transactional(readOnly=true)
+	public List<User> getAll(){
+		
+		return userMapper.getAll();
+	}
+	
+	@Transactional
+	public void update(User user) {
+		userMapper.update(user);
+	}
+	
+	@Transactional(readOnly = true)
+	public User getUserById(Long id){
+		return userMapper.get(id);
+	}
+	
+	@Transactional
+	public void delete(Long id) {
+		userMapper.delete(id);
+	}
+	
+	@Transactional
+	public void save(User user) {
+		//对一些字段的设置
+		String salt = UUID.randomUUID().toString().replaceAll("-", "");
+		user.setSalt(salt);
+		
+		userMapper.save(user);
+	}
+	
+	/*@Transactional(readOnly=true)
+	public Page<User> getPage(Page<User> page) {
+		
+		long totalElements = userMapper.getTotalElements();
+		
+		int fromIndex = (page.getPageNo()-1)*page.getPageSize() + 1;
+		int endIndex = fromIndex + page.getPageSize();
+		
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("fromIndex", fromIndex);
+		map.put("endIndex", endIndex);
+		
+		List<User> content = userMapper.getContent(map);
+		page.setTotalElements((int) totalElements);
+		page.setContent(content);
+		
+		return page;
+	}
+	*/
+	@Transactional(readOnly=true)
+	public User login(String name,String password) {
+		
+		User user = userMapper.getUserByName(name);
+		
+		if(user != null 
+			&& user.getEnabled() == 1
+			&& user.getPassword().equals(password)){
+			
+			return user;
+		}
+		
+		return null;
+	}
+
+	@Transactional(readOnly=true)
+	public Page<User> getPage(Page<User> page, Map<String, Object> params) {
+		
+		//将map转换为 propetyFilter
+ 		List<PropertyFilter> filters = PropertyFilter.getPropertyFilters(params);
+		
+		Map<String, Object> mybatisMap = paraseFilters2MybatisMap(filters);
+		long totalElements = userMapper.getTotalElements(mybatisMap);
+		//加 页码
+		Map<String, Object> map = new HashMap<String, Object>();
+		int fromIndex = (page.getPageNo()-1)*page.getPageSize()+1;
+		int endIndex = fromIndex + page.getPageSize();
+		map.put("fromIndex", fromIndex);
+		map.put("endIndex", endIndex);
+		mybatisMap.putAll(map);
+		
+		List<User> content = userMapper.getContent(mybatisMap);
+		page.setTotalElements((int)totalElements);
+		page.setContent(content);
+		
+		return page;
+	}
+
+	private Map<String, Object> paraseFilters2MybatisMap(
+			List<PropertyFilter> filters) {
+		
+		Map<String, Object> result = new HashMap<String, Object>();
+		
+		for (PropertyFilter filter : filters) {
+			String propertyName = filter.getPropertyName();
+			Object propertyValue = filter.getPropertyValue();
+			Class propertyType = filter.getPropertyType();
+			propertyValue = ReflectionUtils.convertValue(propertyValue, propertyType);
+			
+			MatchType matchType = filter.getMatchType();
+			if (matchType == MatchType.LIKE) {
+				propertyValue = "%"+propertyValue+"%";
+			}else if(matchType == MatchType.EQ){
+				propertyValue = propertyValue;
+			}
+			result.put(propertyName, propertyValue);
+		}
+		
+		return result;
+	}
+	
+}

@@ -1,0 +1,38 @@
+package com.atguigu.crm.service;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.atguigu.crm.dao.SalesPlanMapper;
+import com.atguigu.crm.entity.SalesPlan;
+import com.atguigu.crm.orm.Page;
+
+@Service
+public class SalesPlanService {
+
+	@Autowired
+	private SalesPlanMapper salesPlanMapper;
+	
+	public Page<SalesPlan> getPage(Page<SalesPlan> page) {
+		
+		long totalElements = salesPlanMapper.getTotalElements(page);
+		
+		int pageNo = page.getPageNo();
+		int pageSize = page.getPageSize();
+		int fromIndex = (pageNo-1)*pageSize+1;
+		int endIndex = fromIndex + pageSize;
+		
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("fromIndex", fromIndex);
+		params.put("endIndex", endIndex);
+		List<SalesPlan> content = salesPlanMapper.getContent(params);
+		page.setTotalElements((int)totalElements);
+		page.setContent(content);
+		
+		return page;
+	}
+}

@@ -1,0 +1,132 @@
+package com.atguigu.crm.orm;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
+
+/**
+ * 解析实际参数 LIKES_loginName
+ * 
+ * @author Administrator
+ *
+ */
+public class PropertyFilter {
+
+	/**
+	 * 把请求参数解析成我们所需要的propertyFilter
+	 * 
+	 * @param params
+	 * @return
+	 */
+	public static List<PropertyFilter> getPropertyFilters(
+			Map<String, Object> params) {
+
+		List<PropertyFilter> filters = new ArrayList<PropertyFilter>();
+		for (Map.Entry<String, Object> param : params.entrySet()) {
+			String propertyName;
+			Class PropertyType;
+			MatchType matchType;
+			Object propertyValue;
+			
+			String key = param.getKey();
+			//LIKES_loginName
+			Object value = param.getValue();
+			propertyValue = value;
+			if (value == null || value.toString().trim().equals("")) {
+				continue;
+			}
+			propertyName = StringUtils.substringAfter(key, "_");
+			
+			//LIKES
+			String str = StringUtils.substringBefore(key, "_");
+			
+			//LIKE
+			String matchCode = str.substring(0, str.length()-1);
+			matchType = Enum.valueOf(MatchType.class, matchCode);
+			//S
+			String propetyCode = str.substring(str.length()-1);
+			PropertyType = Enum.valueOf(PropertyType.class, propetyCode).getPropeType();
+			
+			PropertyFilter filter = new PropertyFilter(propertyName, PropertyType, matchType, propertyValue);
+			filters.add(filter);
+		}
+		return filters;
+	}
+
+	/**
+	 * 定义四个属性
+	 *
+	 */
+	private String propertyName;
+	private Class PropertyType;
+	private MatchType matchType;
+	private Object propertyValue;
+
+	public PropertyFilter() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+
+	public PropertyFilter(String propertyName, Class propertyType,
+			MatchType matchType, Object propertyValue) {
+		super();
+		this.propertyName = propertyName;
+		PropertyType = propertyType;
+		this.matchType = matchType;
+		this.propertyValue = propertyValue;
+	}
+
+	public String getPropertyName() {
+		return propertyName;
+	}
+
+	public void setPropertyName(String propertyName) {
+		this.propertyName = propertyName;
+	}
+
+	public Class getPropertyType() {
+		return PropertyType;
+	}
+
+	public void setPropertyType(Class propertyType) {
+		PropertyType = propertyType;
+	}
+
+	public MatchType getMatchType() {
+		return matchType;
+	}
+
+	public void setMatchType(MatchType matchType) {
+		this.matchType = matchType;
+	}
+
+	public Object getPropertyValue() {
+		return propertyValue;
+	}
+
+	public void setPropertyValue(Object propertyValue) {
+		this.propertyValue = propertyValue;
+	}
+
+	public enum MatchType {
+		EQ, LT, GT, LE, GE, LIKE;
+	}
+
+	enum PropertyType {
+
+		I(Integer.class), D(Date.class), F(Float.class), S(String.class);
+
+		private Class propeType;
+
+		private PropertyType(Class propeType) {
+			this.propeType = propeType;
+		}
+
+		public Class getPropeType() {
+			return propeType;
+		}
+	}
+}

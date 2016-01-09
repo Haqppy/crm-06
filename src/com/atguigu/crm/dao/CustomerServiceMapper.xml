@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.atguigu.crm.dao.CustomerServiceMapper">
+
+	<!-- 查询条件 -->
+	<sql id="condition">
+		<where>
+			created_id = #{userId}
+			<if test="allotToId == null">
+				AND allot_id is null
+			</if>
+			<if test="allotToId != null">
+			    AND allot_id is not null
+			</if>
+			
+			<if test="serviceType != null">
+				AND service_type LIKE #{serviceType}
+			</if>
+			<if test="serviceTitle != null">
+				AND service_title LIKE #{serviceTitle}
+			</if>
+			<if test="customerName != null">
+				AND c.name = #{customerName}
+			</if>
+			<if test="createDate1 != null" >
+				AND create_date >= #{createDate1}
+			</if>
+			<if test="createDate2 != null">
+				<![CDATA[
+					AND create_date <= #{createDate2}
+				]]>
+			</if>
+			
+			<if test="serviceDeal == null">
+				AND service_deal is null
+			</if>
+			<if test="serviceDeal != null">
+				AND service_deal is not null
+			</if>
+			<if test="dealResult == null">
+				AND deal_result is null
+			</if>
+			<if test="dealResult != null">
+				AND deal_result is not null
+			</if>
+			
+		</where>
+	</sql>
+	
+	<!-- Long getTotalElements(Map<String, Object> map); -->
+	<select id="getTotalElements" resultType="Long">
+	
+		select count(id) 
+		from 
+			(select cs.id,
+			 cs.service_type,cs.service_title,
+			 service_deal,deal_result,
+			 c.name as "customer.name",
+			 u.name as "createdby.name",
+			 cs.create_date,
+			 allot_id,created_id
+			 from customer_services cs 
+			 left outer join customers c
+			 on cs.customer_id = c.id
+			 left outer join users u
+			 on cs.created_id=u.id 
+			 <include refid="condition"/>
+			) 
+	</select>
+	 
+	<!-- List<CustomerService> getContentCustomerServices(Map<String, Object> map) -->
+	<select id="getContentCustomerServices" resultType="com.atguigu.crm.entity.CustomerService">
+		select * 
+		from 
+			(select rownum rn, cs.id,
+			 cs.service_type,cs.service_title,
+			 service_deal,deal_result,
+			 c.name as "customer.name",
+			 u.name as "createdby.name",
+			 cs.create_date,created_id,
+			 allot_id
+			 from customer_services cs 
+			 left outer join customers c
+			 on cs.customer_id = c.id
+			 left outer join users u
+			 on cs.created_id=u.id 
+			 <include refid="condition"/>
+			) t 
+			
+		where 
+		<![CDATA[
+			 t.rn >= #{fromIndex} AND t.rn < #{endIndex}
+		]]>
+	</select>
+	
+	<!-- void save(CustomerService customerService) -->
+	<insert id="save">
+		insert into 
+		customer_services
+		(id,service_type,service_title,customer_id,service_state,service_request,create_date,created_id)
+        values
+        (crm_seq.nextval,#{serviceType,jdbcType=VARCHAR},#{serviceTitle},#{customer.id,jdbcType=NUMERIC},#{serviceState,jdbcType=VARCHAR},
+         #{serviceRequest,jdbcType=VARCHAR},#{createDate,jdbcType=DATE},#{createdby.id,jdbcType=NUMERIC})
+	</insert>
+	
+</mapper>

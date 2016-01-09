@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.atguigu.crm.dao.UserMapper">
+	
+	<sql id="condition">
+		<where>
+			<if test="name != null">
+				name like #{name}
+			</if>
+			<if test="enabled != null">
+				And enabled = #{enabled}
+			</if>
+		</where>
+	</sql>
+	
+	<select id="getTotalElements" resultType="Long">
+		select count(id) from users
+		<include refid="condition"/>
+	</select>
+	
+	<select id="getContent" resultType="com.atguigu.crm.entity.User">
+		select * from 
+		   (select rownum rn ,id,enabled,NAME from users 
+		    <include refid="condition"/>) t  
+		    <![CDATA[
+		 	  where t.rn >= #{fromIndex} and t.rn < #{endIndex}
+		    ]]>
+	</select>
+	
+	<resultMap type="com.atguigu.crm.entity.User" id="userMap">
+		<id property="id" column="id"/>
+		<result property="name" column="name"/>
+		<result property="password" column="password"/>
+		<result property="salt" column="salt"/>
+		<result column="enabled" property="enabled"/>
+		
+		<result column="role.name" property="role.name"/>
+		
+		<collection property="role.authorities" ofType="com.atguigu.crm.entity.Authority">
+			<result column="a_name" property="name"/>
+			<result column="a_displayName" property="displayName"/>
+			<result column="a_url" property="url"/>
+			<result column="a_parentAuthorityName" property="parentAuthority.displayName"/>
+		</collection>
+		
+	</resultMap>
+	
+	<select id="getUserByName" resultMap="userMap">
+		select u.id,u.name,u.enabled,u.password,u.salt,r.name as "role.name",
+	      u.role_id as "role.id" ,
+	      a.name as "a_name",
+	      a.display_name as "a_displayName",
+	      a.url as "a_url",ap.display_name as "a_parentAuthorityName"
+	      from users u
+	      left outer join roles r
+	      on u.role_id = r.id 
+	      left outer join role_authority ra
+	      on r.id = ra.role_id
+	      left outer join authorities a
+	      on a.id = ra.authority_id
+	      left outer join authorities ap
+	      on a.parent_authority_id = ap.id
+	      where u.name = #{name}
+ 	</select>
+ 	
+</mapper>
+

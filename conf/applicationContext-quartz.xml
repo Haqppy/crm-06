@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!-- 
+    3. 在 Spring 的配置文件中配置集成 Quartz
+	3.1 配置 TargetObject. 
+	3.2 配置 JobDetail
+	3.3 配置 CronTrigger
+	3.4 配置 Scheduler 
+	-->
+	<!-- 配置JobDetail -->
+	<bean id="job"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="customerDrainService"></property>
+		<property name="targetMethod" value="checkCustomerDrain"></property>
+	</bean>
+	
+	<!-- 配置 CronTrigger -->
+	<bean id="trigger"
+		class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="job"></property>
+		<property name="cronExpression" value="0 10 19 * * ?"></property>
+	</bean>
+	
+	<!-- 配置 Scheduler -->
+	<bean id="scheduler"
+		class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="triggers">
+			<array>
+				<ref bean="trigger"/>
+			</array>
+		</property>
+		<!-- 配置 Quartz 的原生属性. /org/quartz/quartz.properties -->
+		<property name="quartzProperties">
+			<props>
+				<prop key="org.quartz.threadPool.threadCount">5</prop>
+			</props>
+		</property>
+		<!-- 配置 IOC 容器启动多长时间以后, Quartz 开始执行 -->
+		<property name="startupDelay" value="10"></property>
+	</bean>	
+
+</beans>

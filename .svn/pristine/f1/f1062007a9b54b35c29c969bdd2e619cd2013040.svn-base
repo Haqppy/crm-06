@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.atguigu.crm.dao.UserMapper">
+	
+	<sql id="condition">
+		<where>
+			<if test="name != null">
+				name like #{name}
+			</if>
+			<if test="enabled != null">
+				And enabled = #{enabled}
+			</if>
+		</where>
+	</sql>
+	
+	<select id="getTotalElements" resultType="Long">
+		select count(id) from users
+		<include refid="condition"/>
+	</select>
+	
+	<select id="getContent" resultType="com.atguigu.crm.entity.User">
+		select * from 
+		   (select rownum rn ,id,enabled,NAME from users 
+		    <include refid="condition"/>) t  
+		    <![CDATA[
+		 	  where t.rn >= #{fromIndex} and t.rn < #{endIndex}
+		    ]]>
+	</select>
+	
+</mapper>
+

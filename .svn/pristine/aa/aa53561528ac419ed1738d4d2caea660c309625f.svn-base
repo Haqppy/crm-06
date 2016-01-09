@@ -1,0 +1,20 @@
+package com.atguigu.crm.dao;
+
+import java.util.List;
+import java.util.Map;
+
+import org.apache.ibatis.annotations.Select;
+
+import com.atguigu.crm.entity.SalesPlan;
+import com.atguigu.crm.orm.Page;
+
+
+public interface SalesPlanMapper {
+	
+	@Select(value="select count(id) from sales_plan")
+	long getTotalElements(Page<SalesPlan> page);
+	
+	List<SalesPlan> getContent(Map<String, Object> map);
+	
+	
+}
